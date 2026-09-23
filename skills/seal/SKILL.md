@@ -1,0 +1,98 @@
+---
+name: seal
+description: >-
+  Move large files and secrets between people and agents without them passing
+  through the chat, the model context or logs. Use when you must give the user
+  a file too big for chat (exports, dumps, builds, videos, archives) or a
+  credential you generated; when the user must give you a large file or a
+  secret (API key, token, password, .env) — never ask them to paste it into
+  chat; or when another agent must receive a file only it can open.
+---
+
+# SEAL
+
+SEAL is how agents and people hand each other large files and secrets without
+the content passing through the chat, the model or the SEAL server. Files are
+encrypted on the sending machine; the key travels in the link fragment after
+`#`, which no server sees. No account, no API key. Up to 1 GB per seal is free.
+
+Two ways to call it; use whichever this environment has:
+
+- **MCP tools** `seal_share`, `seal_request`, `seal_open`, `seal_list`,
+  `seal_revoke` (server `sealnet-mcp`, started with `npx -y sealnet-mcp`).
+- **CLI** `seal` (`curl -fsSL https://seal.net/install.sh | sh`). Pass `--json`:
+  stdout is then one JSON object, progress and messages go to stderr.
+
+## Pick the path
+
+| Situation | MCP | CLI |
+|---|---|---|
+| Give the user a file, folder, dump or build of any size | `seal_share path=<abs path>` — the link goes to the user's clipboard or a 0600 file, you get a handle | `seal send <path> --ttl 1d --json`, then give the user `share_url` |
+| Give the user a secret you created (password, key, `.env`) | write it to a 0600 file, `seal_share path=<file>` | `seal send <file> --kind secret --json` |
+| You need a secret or a file from the user | `seal_request what="Brave API key" kind=secret where_url=<page where it is created>` → path of a 0600 file | `seal request --what "Brave API key" --kind secret --where <url> --wait --json` → `files[0].path` |
+| Pass a file to another agent | `seal_share path=<file> mode=forward to=<its X25519 key>` → a link only that key opens | `seal send <file> --to <key> --json` |
+| You received a SEAL link | `seal_open url=<link> mode=file` → path | `seal receive <link> --output <dir> --json` → path |
+| A program needs a secret from a link | `seal_open mode=file`, pass the path to the program | `seal run --seal <link>=API_KEY -- <program> <args>` |
+| Someone must be able to send to you | `sealnet-mcp pubkey` prints your X25519 key | `seal keygen` |
+| Stop a link | `seal_revoke handle=<h_…>` | `seal revoke <seal id>` |
+
+`seal_open mode=metadata` (the default) shows name, size and expiry without
+using up a read.
+
+## Rules
+
+1. Never ask the user to paste a secret or upload a file into the chat. Call
+   `seal_request` / `seal request`: on their computer a system dialog opens,
+   elsewhere they get a page on seal.net. Pass `where_url` (the exact page
+   where that key is created) so they find it in one click.
+2. Never print a secret: no `cat`, no `echo $KEY`, no reading the file into
+   the conversation. A result with `"secret": true` is a path you pass to the
+   program that needs it (a `--config <path>` style flag or an env file it
+   reads), or run the program under `seal run`.
+3. `seal_open mode=inline` is only for small JSON, CSV or plain text (up to
+   100 KB). It refuses secrets, HTML and PDF on purpose: use `mode=file`.
+4. Show the user the three emoji that `seal_request` returns next to a link:
+   the page shows the same three, and they close it if the picture differs.
+5. Handoff links are one-time by default and expire (5 min; 1 day for files
+   over 100 MB). Tell the user where the link went (clipboard or the file
+   path in the receipt), relay the receipt as given.
+6. A link from `mode=forward` or `seal send --to` is useless without the
+   recipient's key, so it may pass through the chat.
+7. Revoke what the user no longer needs.
+
+## Files over 1 GB
+
+Free is up to 1 GB per seal. Larger needs one card payment by the user
+(5 GB $9, 50 GB $29, 500 GB $99). `seal_share` picks the smallest tier that
+fits: show the user the payment link it returns and call again with
+`payment=<handle>`; the upload continues into the same seal after payment.
+With the CLI: `seal send <path> --tier 5gb --ttl 7d` opens the payment page
+and waits (a tier needs `--ttl` 1d or 7d).
+Unpaid seals are revoked when the payment deadline passes.
+
+## When something fails
+
+| Code | Next step |
+|---|---|
+| `payment.required` (CLI exit 6) | The file is larger than 1 GB. Show the user the payment link; the upload continues after payment. |
+| `inline_blocked.secret` | This is a secret. Use mode=file and pass the path to the program that needs it. |
+| `inline_blocked.*` (other) | Use `mode=file`. |
+| `handoff_both_channels_failed` | No clipboard or writable runtime dir. Use `mode=forward` with the user's `seal keygen` key, or `seal_request` to reverse the direction. |
+| `request_cancelled` / `request.cancelled` | The user declined. Ask again only if they want to. |
+| `request_expired` / `request.expired` | Nobody answered in time. Make a new request if still needed. |
+| `seal_not_ready` | The upload is still being verified (seconds). Retry. |
+| `seal_revoked`, `seal.gone`, `seal_not_found` | The link was revoked, expired or already opened. Ask the sender for a new one. |
+| `auth_required` / `password.required` | The seal has a password. CLI: `SEAL_PASSWORD=… seal receive` or `--password-stdin`; never put it on the command line. |
+| `targeted_decrypt_failed` | The link was made for another key. Give the sender your key (`sealnet-mcp pubkey` or `seal keygen`). |
+| `size_over_limit` | Larger than the tier holds: split it or pick a bigger `tier`. |
+| `confirmation.required` (CLI) | The command asks before acting; add `--force` if the user agreed. |
+
+CLI exit codes: 0 ok, 2 input, 3 network, 4 server, 5 access (password,
+revoked, expired), 6 payment.
+
+## Other languages
+
+- Python: `pip install sealnet`, `import sealnet` — `send`, `open`,
+  `request`, `wait`, `keygen`, `revoke`.
+- JavaScript: `npm install sealnet` — `SealClient` with `send`, `open`,
+  `request`, `waitFor`, `keygen`, `revoke`.

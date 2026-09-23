@@ -1,0 +1,12 @@
+{
+  "name": "seal-hq",
+  "owner": { "name": "SEAL", "url": "https://seal.net" },
+  "description": "SEAL for Claude Code: large files and secrets without the chat.",
+  "plugins": [
+    {
+      "name": "seal",
+      "source": "./",
+      "description": "Five MCP tools (seal_share, seal_request, seal_open, seal_list, seal_revoke) and the seal skill."
+    }
+  ]
+}
