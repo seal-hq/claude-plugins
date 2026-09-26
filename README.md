@@ -2,7 +2,7 @@
 
 SEAL is how agents and people hand each other large files and secrets without the content passing through the chat, the model or the SEAL server.
 
-This repository is the Claude Code plugin: the `sealnet-mcp` server (five tools) and the `seal` skill that tells the model when to use them.
+This repository is the Claude Code plugin: the `sealnet-mcp` server (six tools) and the `seal` skill that tells the model when to use them.
 
 ```
 /plugin marketplace add seal-hq/claude-plugins

@@ -18,8 +18,9 @@ encrypted on the sending machine; the key travels in the link fragment after
 
 Two ways to call it; use whichever this environment has:
 
-- **MCP tools** `seal_share`, `seal_request`, `seal_open`, `seal_list`,
-  `seal_revoke` (server `sealnet-mcp`, started with `npx -y sealnet-mcp`).
+- **MCP tools** `seal_share`, `seal_request`, `seal_open`, `seal_inbox`,
+  `seal_list`, `seal_revoke` (server `sealnet-mcp`, started with
+  `npx -y sealnet-mcp`).
 - **CLI** `seal` (`curl -fsSL https://seal.net/install.sh | sh`). Pass `--json`:
   stdout is then one JSON object, progress and messages go to stderr.
 
@@ -30,10 +31,11 @@ Two ways to call it; use whichever this environment has:
 | Give the user a large file, folder, dump or build | `seal_share path=<abs path>` — the link goes to the user's clipboard or a 0600 file, you get a handle; never read or print that file | `seal send <path> --ttl 1d --json`, then give the user `share_url` |
 | Give the user a secret you created (password, key, `.env`) | write it to a 0600 file, `seal_share path=<file>` | `seal send <file> --kind secret --json` |
 | You need a secret or a file from the user | `seal_request what="Brave API key" kind=secret where_url=<page where it is created>` → path of a 0600 file | `seal request --what "Brave API key" --kind secret --where <url> --wait --json` → `files[0].path` |
-| Pass a file to another agent | `seal_share path=<file> mode=forward to=<its X25519 key>` → a link only that key opens | `seal send <file> --to <key> --json` |
+| Pass a file to another agent | `seal_share path=<file> mode=forward to=<its address>` → a link only that key opens, also in its inbox | `seal send <file> --to <address> --json` |
+| Files another agent or a person sent to your key | `seal_inbox wait=60`, then `seal_open item=<in_…> mode=file` | `seal inbox --wait 60 --json`, then `seal inbox open <id> --json` |
 | You received a SEAL link | `seal_open url=<link> mode=file` → path | `seal receive <link> --output <dir> --json` → path |
 | A program needs a secret from a link | `seal_open mode=file`, pass the path to the program | `seal run --seal <link>=API_KEY -- <program> <args>` |
-| Someone must be able to send to you | `sealnet-mcp pubkey` prints your X25519 key | `seal keygen` |
+| Someone must be able to send to you | `sealnet-mcp pubkey` prints your address (X25519 key) | `seal keygen` |
 | Stop a link | `seal_revoke handle=<h_…>` | `seal revoke <seal id>` |
 
 `seal_open mode=metadata` (the default) shows name, size and expiry without
@@ -57,7 +59,8 @@ using up a read.
    over 100 MB). Tell the user where the link went (clipboard or the file
    path in the receipt), relay the receipt as given.
 6. A link from `mode=forward` or `seal send --to` is useless without the
-   recipient's key, so it may pass through the chat.
+   recipient's key, so it may pass through the chat; it also lands in the
+   recipient's inbox, so the chat is not needed to deliver it.
 7. Revoke what the user no longer needs.
 
 ## Files over 1 GB
@@ -84,6 +87,8 @@ Unpaid seals are revoked when the payment deadline passes.
 | `seal_revoked`, `seal.gone`, `seal_not_found` | The link was revoked, expired or already opened. Ask the sender for a new one. |
 | `auth_required` / `password.required` | The seal has a password. CLI: `SEAL_PASSWORD=… seal receive` or `--password-stdin`; never put it on the command line. |
 | `targeted_decrypt_failed` | The link was made for another key. Give the sender your key (`sealnet-mcp pubkey` or `seal keygen`). |
+| `inbox_item_gone` | The item was revoked, expired or removed. Call `seal_inbox` again. |
+| `inbox_full` | The recipient's inbox is full. Retry later, or hand the link over another way. |
 | `size_over_limit` | Larger than the tier holds: split it or pick a bigger `tier`. |
 | `confirmation.required` (CLI) | The command asks before acting; add `--force` if the user agreed. |
 
@@ -92,7 +97,7 @@ revoked, expired), 6 payment.
 
 ## Other languages
 
-- Python: `pip install sealnet`, `import sealnet` — `send`, `open`,
-  `request`, `wait`, `keygen`, `revoke`.
-- JavaScript: `npm install sealnet` — `SealClient` with `send`, `open`,
-  `request`, `waitFor`, `keygen`, `revoke`.
+- Python: `pip install sealnet`, `import sealnet` — `send` (`to=` an
+  address), `open`, `inbox`, `dismiss`, `request`, `wait`, `keygen`, `revoke`.
+- JavaScript: `npm install sealnet` — `SealClient` with `send` (`to`),
+  `open`, `inbox`, `dismiss`, `request`, `waitFor`, `keygen`, `revoke`.
