@@ -18,9 +18,9 @@ encrypted on the sending machine; the key travels in the link fragment after
 
 Two ways to call it; use whichever this environment has:
 
-- **MCP tools** `seal_share`, `seal_request`, `seal_open`, `seal_inbox`,
-  `seal_run`, `seal_list`, `seal_revoke` (server `sealnet-mcp`, started with
-  `npx -y sealnet-mcp`).
+- **MCP tools** `seal_share`, `seal_request`, `seal_pair`, `seal_open`,
+  `seal_inbox`, `seal_run`, `seal_list`, `seal_revoke` (server `sealnet-mcp`,
+  started with `npx -y sealnet-mcp`).
 - **CLI** `seal` (`curl -fsSL https://seal.net/install.sh | sh`). Pass `--json`:
   stdout is then one JSON object, progress and messages go to stderr.
 
@@ -28,7 +28,8 @@ Two ways to call it; use whichever this environment has:
 
 | Situation | MCP | CLI |
 |---|---|---|
-| Give the user a large file, folder, dump or build | `seal_share path=<abs path>` — the link goes to the user's clipboard or a 0600 file, you get a handle; never read or print that file | `seal send <path> --ttl 1d --json`, then give the user `share_url` |
+| Connect to the user's SEAL inbox, once | `seal_pair` → show the link and the three emoji; after it files go to their inbox | `seal pair --json` |
+| Give the user a large file, folder, dump or build | `seal_share path=<abs path>` — into the user's inbox once connected, else the link goes to their clipboard or a 0600 file; you get a handle; never read or print that file | `seal send <path> --to owner --json` once paired, else `seal send <path> --ttl 1d --json` and give the user `share_url` |
 | Give the user a secret you created (password, key, `.env`) | write it to a 0600 file, `seal_share path=<file>` | `seal send <file> --kind secret --json` |
 | You need a secret or a file from the user | `seal_request what="Brave API key" kind=secret where_url=<page where it is created>` → path of a 0600 file | `seal request --what "Brave API key" --kind secret --where <url> --wait --json` → `files[0].path` |
 | Pass a file to another agent | `seal_share path=<file> mode=forward to=<its address>` → a link only that key opens, also in its inbox | `seal send <file> --to <address> --json` |
@@ -57,8 +58,10 @@ using up a read.
 4. Show the user the three emoji that `seal_request` returns next to a link:
    the page shows the same three, and they close it if the picture differs.
 5. Handoff links are one-time by default and expire (5 min; 1 day for files
-   over 100 MB). Tell the user where the link went (clipboard or the file
-   path in the receipt), relay the receipt as given.
+   over 100 MB; 1 day in the inbox). Tell the user where the file went (their
+   inbox, the clipboard or the file path in the receipt), relay the receipt as
+   given. In a cloud session, offer `seal_pair`: then nothing lands in a file
+   on that machine.
 6. A link from `mode=forward` or `seal send --to` is useless without the
    recipient's key, so it may pass through the chat; it also lands in the
    recipient's inbox, so the chat is not needed to deliver it.
@@ -90,6 +93,8 @@ Unpaid seals are revoked when the payment deadline passes.
 | `targeted_decrypt_failed` | The link was made for another key. Give the sender your key (`sealnet-mcp pubkey` or `seal keygen`). |
 | `inbox_item_gone` | The item was revoked, expired or removed. Call `seal_inbox` again. |
 | `inbox_full` | The recipient's inbox is full. Retry later, or hand the link over another way. |
+| `owner_not_paired` | Not connected to the user's inbox: call `seal_pair` (or set `SEAL_OWNER`). |
+| `pair_expired` / `pair_cancelled` | Nobody connected, or the user declined. Call `seal_pair` again only if they want to. |
 | `run_cli_missing` | `seal_run` needs the `seal` CLI: `curl -fsSL https://seal.net/install.sh \| sh`. |
 | `run_timeout` | The program ran past `timeout` (default 120 s, up to 600) and was killed. |
 | `size_over_limit` | Larger than the tier holds: split it or pick a bigger `tier`. |
@@ -100,7 +105,9 @@ revoked, expired), 6 payment.
 
 ## Other languages
 
-- Python: `pip install sealnet`, `import sealnet` — `send` (`to=` an
-  address), `open`, `inbox`, `dismiss`, `request`, `wait`, `keygen`, `revoke`.
-- JavaScript: `npm install sealnet` — `SealClient` with `send` (`to`),
-  `open`, `inbox`, `dismiss`, `request`, `waitFor`, `keygen`, `revoke`.
+- Python: `pip install sealnet`, `import sealnet` — `pair`, `send` (`to=` an
+  address, `owner=` the paired inbox), `open`, `inbox`, `dismiss`, `request`,
+  `wait`, `keygen`, `revoke`.
+- JavaScript: `npm install sealnet` — `SealClient` with `pair`, `send` (`to`,
+  `owner`), `open`, `inbox`, `dismiss`, `request`, `waitFor`, `keygen`,
+  `revoke`.

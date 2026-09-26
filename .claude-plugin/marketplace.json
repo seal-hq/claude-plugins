@@ -6,7 +6,7 @@
     {
       "name": "seal",
       "source": "./",
-      "description": "Seven MCP tools (seal_share, seal_request, seal_open, seal_inbox, seal_run, seal_list, seal_revoke) and the seal skill."
+      "description": "Eight MCP tools (seal_share, seal_request, seal_pair, seal_open, seal_inbox, seal_run, seal_list, seal_revoke) and the seal skill."
     }
   ]
 }
