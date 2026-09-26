@@ -19,7 +19,7 @@ encrypted on the sending machine; the key travels in the link fragment after
 Two ways to call it; use whichever this environment has:
 
 - **MCP tools** `seal_share`, `seal_request`, `seal_open`, `seal_inbox`,
-  `seal_list`, `seal_revoke` (server `sealnet-mcp`, started with
+  `seal_run`, `seal_list`, `seal_revoke` (server `sealnet-mcp`, started with
   `npx -y sealnet-mcp`).
 - **CLI** `seal` (`curl -fsSL https://seal.net/install.sh | sh`). Pass `--json`:
   stdout is then one JSON object, progress and messages go to stderr.
@@ -34,7 +34,7 @@ Two ways to call it; use whichever this environment has:
 | Pass a file to another agent | `seal_share path=<file> mode=forward to=<its address>` → a link only that key opens, also in its inbox | `seal send <file> --to <address> --json` |
 | Files another agent or a person sent to your key | `seal_inbox wait=60`, then `seal_open item=<in_…> mode=file` | `seal inbox --wait 60 --json`, then `seal inbox open <id> --json` |
 | You received a SEAL link | `seal_open url=<link> mode=file` → path | `seal receive <link> --output <dir> --json` → path |
-| A program needs a secret from a link | `seal_open mode=file`, pass the path to the program | `seal run --seal <link>=API_KEY -- <program> <args>` |
+| A program needs a secret from a link or your inbox | `seal_run command=[<program>, <args>] secrets=[{url=<link>, name=API_KEY}]` (or `item=<in_…>`) → its output with the value replaced | `seal run --seal <link>=API_KEY --redact -- <program> <args>` (or `--item <id>=API_KEY`) |
 | Someone must be able to send to you | `sealnet-mcp pubkey` prints your address (X25519 key) | `seal keygen` |
 | Stop a link | `seal_revoke handle=<h_…>` | `seal revoke <seal id>` |
 
@@ -50,7 +50,8 @@ using up a read.
 2. Never print a secret: no `cat`, no `echo $KEY`, no reading the file into
    the conversation. A result with `"secret": true` is a path you pass to the
    program that needs it (a `--config <path>` style flag or an env file it
-   reads), or run the program under `seal run`.
+   reads), or run the program with `seal_run` / `seal run --redact`. Never
+   read a secret file to put its value into a command.
 3. `seal_open mode=inline` is only for small JSON, CSV or plain text (up to
    100 KB). It refuses secrets, HTML and PDF on purpose: use `mode=file`.
 4. Show the user the three emoji that `seal_request` returns next to a link:
@@ -89,6 +90,8 @@ Unpaid seals are revoked when the payment deadline passes.
 | `targeted_decrypt_failed` | The link was made for another key. Give the sender your key (`sealnet-mcp pubkey` or `seal keygen`). |
 | `inbox_item_gone` | The item was revoked, expired or removed. Call `seal_inbox` again. |
 | `inbox_full` | The recipient's inbox is full. Retry later, or hand the link over another way. |
+| `run_cli_missing` | `seal_run` needs the `seal` CLI: `curl -fsSL https://seal.net/install.sh \| sh`. |
+| `run_timeout` | The program ran past `timeout` (default 120 s, up to 600) and was killed. |
 | `size_over_limit` | Larger than the tier holds: split it or pick a bigger `tier`. |
 | `confirmation.required` (CLI) | The command asks before acting; add `--force` if the user agreed. |
 

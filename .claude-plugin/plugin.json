@@ -1,8 +1,8 @@
 {
   "name": "seal",
   "displayName": "SEAL",
-  "version": "1.1.0",
-  "description": "Large files and secrets between people and agents without them passing through the chat: six MCP tools and a skill that says when to use them.",
+  "version": "1.2.0",
+  "description": "Large files and secrets between people and agents without them passing through the chat: seven MCP tools and a skill that says when to use them.",
   "author": { "name": "SEAL", "url": "https://seal.net" },
   "homepage": "https://seal.net/mcp",
   "repository": "https://github.com/seal-hq/claude-plugins",
