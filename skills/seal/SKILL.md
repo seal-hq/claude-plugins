@@ -27,7 +27,7 @@ Two ways to call it; use whichever this environment has:
 
 | Situation | MCP | CLI |
 |---|---|---|
-| Give the user a file, folder, dump or build of any size | `seal_share path=<abs path>` — the link goes to the user's clipboard or a 0600 file, you get a handle | `seal send <path> --ttl 1d --json`, then give the user `share_url` |
+| Give the user a large file, folder, dump or build | `seal_share path=<abs path>` — the link goes to the user's clipboard or a 0600 file, you get a handle; never read or print that file | `seal send <path> --ttl 1d --json`, then give the user `share_url` |
 | Give the user a secret you created (password, key, `.env`) | write it to a 0600 file, `seal_share path=<file>` | `seal send <file> --kind secret --json` |
 | You need a secret or a file from the user | `seal_request what="Brave API key" kind=secret where_url=<page where it is created>` → path of a 0600 file | `seal request --what "Brave API key" --kind secret --where <url> --wait --json` → `files[0].path` |
 | Pass a file to another agent | `seal_share path=<file> mode=forward to=<its X25519 key>` → a link only that key opens | `seal send <file> --to <key> --json` |
