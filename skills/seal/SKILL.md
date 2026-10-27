@@ -47,9 +47,10 @@ using up a read.
 ## Rules
 
 1. Never ask the user to paste a secret or upload a file into the chat. Call
-   `seal_request` / `seal request`: on their computer a system dialog opens,
-   elsewhere they get a page on seal.net. Pass `where_url` (the exact page
-   where that key is created) so they find it in one click.
+   `seal_request` / `seal request`: they answer on a seal.net page — on their
+   computer it opens in their browser by itself, elsewhere they get its link
+   or a card in their inbox. Pass `where_url` (the exact page where that key
+   is created) so they find it in one click.
 2. Never print a secret: no `cat`, no `echo $KEY`, no reading the file into
    the conversation. A result with `"secret": true` is a path you pass to the
    program that needs it (a `--config <path>` style flag or an env file it
