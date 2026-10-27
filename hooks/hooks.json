@@ -19,7 +19,7 @@
     ],
     "PostToolUse": [
       {
-        "hooks": [{ "type": "command", "command": "seal", "args": ["hook", "post-tool-use"], "timeout": 10 }]
+        "hooks": [{ "type": "command", "command": "seal", "args": ["hook", "post-tool-use"], "timeout": 30 }]
       }
     ],
     "SessionEnd": [
