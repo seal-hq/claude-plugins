@@ -1,5 +1,5 @@
-# The image the Docker MCP Catalog builds from this repository
-# (SPEC-AGENTS 7.7): the npm package, served over stdio. A container has no
+# The image the Docker MCP Catalog builds from this repository: the npm
+# package, served over stdio. A container has no
 # clipboard and no keychain: the agent's key goes to a 0600 file in the
 # container (pass SEAL_SEED to keep one address across containers), and a
 # handoff link lands in the file channel under /handoff: mount a host

@@ -1,0 +1,31 @@
+{
+  "description": "SEAL guard (SPEC agent egress §6.4): the session's programs go through the guard, keys in prompts and tool output are caught, a literal where a variable belongs is refused. Every hook is `seal hook <event>`: the `seal` CLI on PATH asks the guard's service over its socket; without a guard the hooks answer nothing and session-start says once that the protection is off.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [{ "type": "command", "command": "seal", "args": ["hook", "session-start"], "timeout": 15 }]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [{ "type": "command", "command": "seal", "args": ["hook", "user-prompt-submit"], "timeout": 10 }]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "^(Write|Edit|MultiEdit|NotebookEdit|Bash)$",
+        "hooks": [{ "type": "command", "command": "seal", "args": ["hook", "pre-tool-use"], "timeout": 10 }]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [{ "type": "command", "command": "seal", "args": ["hook", "post-tool-use"], "timeout": 10 }]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [{ "type": "command", "command": "seal", "args": ["hook", "session-end"], "timeout": 5 }]
+      }
+    ]
+  }
+}
